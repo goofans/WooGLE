@@ -26,9 +26,12 @@ jobs:
         settings-path: ${{ github.workspace }} # location for the settings.xml file
 
     - name: Build with Maven
-      run: mvn clean && mvn -B package --file pom.xml
+      run: mvn clean javafx:jlink
 
-    - name: Publish to GitHub Packages Apache Maven
-      run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+    - name: Copy Assets
+      run: cp ButtonIcons ObjectIcons target/WOGAnniversayEditor/bin/
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: WooGLE2
+        path: target/WOGAnniversayEditor/bin/
