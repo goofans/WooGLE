@@ -10,7 +10,7 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     permissions:
       contents: read
       packages: write
@@ -29,9 +29,9 @@ jobs:
       run: mvn clean javafx:jlink
 
     - name: Copy Assets
-      run: cp ButtonIcons ObjectIcons /home/runner/work/WooGLE/WooGLE/target/WOGAnniversayEditor/bin/
+      run: cp ButtonIcons ObjectIcons target/WOGAnniversayEditor/bin/
 
     - uses: actions/upload-artifact@v4
       with:
         name: WooGLE2
-        path: /home/runner/work/WooGLE/WooGLE/target/WOGAnniversayEditor/bin/
+        path: target/WOGAnniversayEditor/bin/
