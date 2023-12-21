@@ -1038,6 +1038,7 @@ public class Main extends Application {
     public static void importImage(File resrcFile) {
         try {
             BufferedImage image = ImageIO.read(resrcFile);
+            String normalizedFilename = resrcFile.getName().split("\\.")[0].replace(' ', '_');
             String path = "";
             if (level.getVersion() == 1.3) {
                 path = FileManager.getOldWOGdir();
@@ -1049,24 +1050,24 @@ public class Main extends Application {
 
             if (!resrcFile.getPath().contains("\\res\\")) {
                 ImageIO.write(image, "png", new File(path + "\\res\\levels\\" + level.getLevelName() + "\\"
-                        + resrcFile.getName().split("\\.")[0] + ".png"));
-                imgPath = path + "\\res\\levels\\" + level.getLevelName() + "\\" + resrcFile.getName().split("\\.")[0]
+                        + normalizedFilename + ".png"));
+                imgPath = path + "\\res\\levels\\" + level.getLevelName() + "\\" + normalizedFilename
                         + ".png";
             }
 
             String imageResourceName = "IMAGE_SCENE_" + level.getLevelName().toUpperCase() + "_"
-                    + resrcFile.getName().split("\\.")[0].toUpperCase();
+                    + normalizedFilename.toUpperCase();
             EditorObject imageResourceObject = EditorObject.create("Image", new EditorAttribute[0], null);
 
             imageResourceObject.setAttribute("id", imageResourceName);
             imageResourceObject.setAttribute(
                 "path",
-                ("res\\levels\\" + level.getLevelName() + "\\" + resrcFile.getName().split("\\.")[0]).replace("\\", "/")
+                ("res\\levels\\" + level.getLevelName() + "\\" + normalizedFilename).replace("\\", "/")
             );
             imageResourceObject.setAttribute("REALid", imageResourceName);
             imageResourceObject.setAttribute(
                 "REALpath",
-                ("res\\levels\\" + level.getLevelName() + "\\" + resrcFile.getName().split("\\.")[0]).replace("\\", "/")
+                ("res\\levels\\" + level.getLevelName() + "\\" + normalizedFilename).replace("\\", "/")
             );
 
             int whereToPlaceResource = 0;
@@ -1198,13 +1199,14 @@ public class Main extends Application {
          * Add a new sound resource with a default ID and path leading to resrcFile in
          * res\music.
          */
+        String normalizedFilename = resrcFile.getName().split("\\.")[0].replace(' ', '_');
         String soundResourceName = "SOUND_LEVEL_" + level.getLevelName().toUpperCase() + "_"
-                + resrcFile.getName().split("\\.")[0].toUpperCase();
+                + normalizedFilename.toUpperCase();
         EditorObject soundResourceObject = EditorObject.create("Sound", new EditorAttribute[0], null);
 
         soundResourceObject.setAttribute("id", soundResourceName);
         soundResourceObject.setAttribute("path",
-                "res\\levels\\" + level.getLevelName() + "\\" + resrcFile.getName().split("\\.")[0]);
+                "res\\levels\\" + level.getLevelName() + "\\" + normalizedFilename);
 
         int whereToPlaceResource = 0;
         int count = 0;
@@ -1291,13 +1293,14 @@ public class Main extends Application {
          * Add a new sound resource with a default ID and path leading to resrcFile in
          * res\music.
          */
+        String normalizedFilename = resrcFile.getName().split("\\.")[0].replace(' ', '_');
         String soundResourceName = "SOUND_LEVEL_" + level.getLevelName().toUpperCase() + "_"
-                + resrcFile.getName().split("\\.")[0].toUpperCase();
+                + normalizedFilename.toUpperCase();
         EditorObject soundResourceObject = EditorObject.create("Sound", new EditorAttribute[0], null);
 
         soundResourceObject.setAttribute("id", soundResourceName);
         soundResourceObject.setAttribute("path",
-                "res\\levels\\" + level.getLevelName() + "\\" + resrcFile.getName().split("\\.")[0]);
+                "res\\levels\\" + level.getLevelName() + "\\" + normalizedFilename);
 
         int whereToPlaceResource = 0;
         int count = 0;
@@ -1604,6 +1607,7 @@ public class Main extends Application {
                 EditorObject vertex2 = EditorObject.create("Vertex", new EditorAttribute[0], pipe);
                 vertex2.setAttribute("x", closestPoint.getX());
                 vertex2.setAttribute("y", closestPoint.getY());
+                ((Vertex) vertex2).setPrevious((Vertex) vertex1);
 
                 level.getLevel().add(pipe);
                 level.getLevel().add(vertex1);
@@ -1614,7 +1618,15 @@ public class Main extends Application {
     }
 
     public static void addPipeVertex(EditorObject parent) {
+        // get the previous vertex before this one
+        Vertex previous = null;
+        for (EditorObject child : parent.getChildren()) {
+            if (child instanceof Vertex) {
+                previous = (Vertex) child;
+            }
+        }
         Vertex obj = (Vertex) EditorObject.create("Vertex", new EditorAttribute[0], parent);
+        obj.setPrevious(previous);
         obj.setAttribute("x", getScreenCenter().getX());
         obj.setAttribute("y", -getScreenCenter().getY());
         obj.setRealName("Vertex");
