@@ -87,7 +87,7 @@ public class Alarms {
                     Main.getLevelSelectPane().setMinHeight(0);
                     Main.getLevelSelectPane().setMaxHeight(0);
                     Main.hierarchy.setRoot(null);
-                    Main.changeTableView(null);
+                    Main.changeTableView((EditorObject) null);
                 }
                 Platform.runLater(() -> tab.getTabPane().getTabs().remove(tab));
             } else if (buttonType.equals(ButtonType.CANCEL)) {
@@ -108,7 +108,7 @@ public class Alarms {
                     Main.getLevelSelectPane().setMinHeight(0);
                     Main.getLevelSelectPane().setMaxHeight(0);
                     Main.hierarchy.setRoot(null);
-                    Main.changeTableView(null);
+                    Main.changeTableView((EditorObject) null);
                 }
                 Platform.runLater(() -> {
                     tab.getTabPane().getTabs().remove(tab);

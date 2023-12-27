@@ -466,6 +466,9 @@ public class EditorObject {
     }
 
     public AttributeChangeAction[] getUserActions(EditorAttribute[] oldAttributes){
+        if (oldAttributes == null) {
+            return new AttributeChangeAction[0];
+        }
         ArrayList<AttributeChangeAction> changes = new ArrayList<>();
         for (EditorAttribute attribute : this.attributes) {
             for (EditorAttribute oldAttribute : oldAttributes) {

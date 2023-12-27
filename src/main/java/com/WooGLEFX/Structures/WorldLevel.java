@@ -2,6 +2,7 @@ package com.WooGLEFX.Structures;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Stack;
 
 import com.WooGLEFX.Engine.FXCreator;
@@ -312,18 +313,28 @@ public class WorldLevel {
     }
 
 
-    private EditorObject selected = null;
+    private List<EditorObject> selected = new ArrayList<>();
 
-    public EditorObject getSelected() {
+    public List<EditorObject> getSelected() {
         return selected;
     }
 
-    public void setSelected(EditorObject selected) {
+    public void setSelected(List<EditorObject> selected) {
         this.selected = selected;
     }
 
+    public void addSelected(EditorObject select) {
+        if (!selected.contains(select)) {
+            selected.add(select);
+        }
+    }
+
+    public void removeSelected(EditorObject select) {
+        selected.remove(select);
+    }
+
     public boolean isSelected(EditorObject editorObject) {
-        return editorObject == selected;
+        return selected.contains(editorObject);
     }
 
     private String currentlySelectedSection = "Scene";

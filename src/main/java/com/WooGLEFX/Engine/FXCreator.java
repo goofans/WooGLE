@@ -740,8 +740,13 @@ public class FXCreator {
         // properties view.
         hierarchy.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                Main.setSelected(newValue.getValue());
-                Main.changeTableView(newValue.getValue());
+                if (!Main.SHIFT) {
+                    Main.selectSingle(newValue.getValue());
+                    Main.changeTableView(newValue.getValue());
+                } else {
+                    Main.addSelected(newValue.getValue());
+                    Main.changeTableView(newValue.getValue());
+                }
             }
         });
 
@@ -753,7 +758,11 @@ public class FXCreator {
 
             row.setOnMousePressed(event -> {
                 if (hierarchy.getTreeItem(row.getIndex()) != null) {
-                    Main.setSelected(hierarchy.getTreeItem(row.getIndex()).getValue());
+                    if (!Main.SHIFT) {
+                        Main.selectSingle(hierarchy.getTreeItem(row.getIndex()).getValue());
+                    } else {
+                        Main.addSelected(hierarchy.getTreeItem(row.getIndex()).getValue());
+                    }
                     Main.changeTableView(hierarchy.getTreeItem(row.getIndex()).getValue());
                     if (event.getButton().equals(MouseButton.SECONDARY)) {
                         try {
@@ -1026,14 +1035,14 @@ public class FXCreator {
             if (e.getNewValue().equals("") || attribute.getInput().verify(attribute.getObject(), e.getNewValue())) {
 
                 // Push an attribute change to the undo buffer.
-                Main.registerChange(new AttributeChangeAction(Main.getSelected(), attribute.getName(), oldValue,
+                Main.registerChange(new AttributeChangeAction(attribute.getObject(), attribute.getName(), oldValue,
                         attribute.getValue()));
                 Main.clearRedoActions();
 
                 // If we have edited the name or ID of the object, change the object's "Name or
                 // ID" value.
                 if (attribute.getName().equals("name") || attribute.getName().equals("id")) {
-                    Main.getSelected().setNameAttribute(attribute);
+                    attribute.getObject().setNameAttribute(attribute);
                 }
 
             } else {
@@ -1368,7 +1377,7 @@ public class FXCreator {
                     // If all tabs are closed, clear the side pane
                     Main.hierarchy.setRoot(null);
                     // Clear the properties pane too
-                    Main.changeTableView(null);
+                    Main.changeTableView((EditorObject) null);
                 }
                 tab.getTabPane().getTabs().remove(tab);
             }
@@ -1433,7 +1442,7 @@ public class FXCreator {
                             ImageView graphic = new ImageView(GlobalResourceManager.getImage(resource.getAttribute("id"), Main.getLevel().getVersion()));
                             graphic.setFitHeight(17);
                             // Set width depending on height
-                            graphic.setFitWidth(graphic.getImage().getWidth() * 17 / graphic.getImage().getHeight());
+                            graphic.setFitWidth(graphic.getImage().getWidth() * 17.0 / graphic.getImage().getHeight());
                             label.setGraphic(graphic);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
@@ -1442,7 +1451,7 @@ public class FXCreator {
                         setImageItem.setGraphic(label);
 
                         setImageItem.setOnAction(event -> {
-                            Main.registerChange(new AttributeChangeAction(Main.getSelected(), attribute.getName(),
+                            Main.registerChange(new AttributeChangeAction(resource, attribute.getName(),
                                     attribute.getValue(), resource.getAttribute("id")));
                             Main.clearRedoActions();
                             attribute.setValue(resource.getAttribute("REALid"));
@@ -1464,7 +1473,7 @@ public class FXCreator {
                         MenuItem setImageItem = new MenuItem(ballFile.getName());
 
                         setImageItem.setOnAction(event -> {
-                            Main.registerChange(new AttributeChangeAction(Main.getSelected(), attribute.getName(),
+                            Main.registerChange(new AttributeChangeAction(attribute.getObject(), attribute.getName(),
                                     attribute.getValue(), ballFile.getName()));
                             Main.clearRedoActions();
                             attribute.setValue(ballFile.getName());
@@ -1482,7 +1491,7 @@ public class FXCreator {
                     MenuItem setImageItem = new MenuItem(particleType);
 
                     setImageItem.setOnAction(event -> {
-                        Main.registerChange(new AttributeChangeAction(Main.getSelected(), attribute.getName(),
+                        Main.registerChange(new AttributeChangeAction(attribute.getObject(), attribute.getName(),
                                 attribute.getValue(), particleType));
                         Main.clearRedoActions();
                         attribute.setValue(particleType);

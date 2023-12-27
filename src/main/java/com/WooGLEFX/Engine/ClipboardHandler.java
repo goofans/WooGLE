@@ -1,14 +1,18 @@
 package com.WooGLEFX.Engine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.WooGLEFX.Structures.EditorAttribute;
 import com.WooGLEFX.Structures.EditorObject;
 
 public class ClipboardHandler {
 
-    public static EditorObject importFromClipboardString(String clipboard) {
+    public static List<EditorObject> importFromClipboardString(String clipboard) {
 
-        //WOGEditor:circle<id=wheel;x=2;y=1024.9834;radius=120;material=machine;tag=mostlydeadly>
+        //WOGEditor:circle<id=wheel;x=2;y=1024.9834;radius=120;material=machine;tag=mostlydeadly>circle<id=wheel;x=2;y=1024.9834;radius=120;material=machine;tag=mostlydeadly>
 
+        List<EditorObject> objects = new ArrayList<>();
         EditorObject object = null;
 
         String currentWord = "";
@@ -29,6 +33,8 @@ public class ClipboardHandler {
                     settingAttribute = false;
                     object.setAttribute(attributeName, currentWord);
                     currentWord = "";
+                    objects.add(object);
+                    object = null;
                 } else {
                     currentWord += part;
                 }
@@ -49,33 +55,29 @@ public class ClipboardHandler {
             }
         }
 
-        return object;
+        return objects;
 
     }
 
-    public static String exportToClipBoardString(EditorObject object) {
-
+    public static String exportToClipBoardString(List<EditorObject> objects) {
         StringBuilder clipboard = new StringBuilder("WOGEditor:");
 
-        clipboard.append(object.getRealName());
+        for (EditorObject object : objects) {
+            clipboard.append(object.getRealName());
+            clipboard.append("<");
 
-        clipboard.append("<");
-
-        for (int i = 0; i < object.getAttributes().length; i++){
-            EditorAttribute attribute = object.getAttributes()[i];
-            if (attribute.getValue() != null && !attribute.getValue().equals(attribute.getDefaultValue()) && !attribute.getValue().equals("")){
-                clipboard.append(attribute.getName()).append("=").append(attribute.getValue());
-                clipboard.append(";");
+            for (int i = 0; i < object.getAttributes().length; i++){
+                EditorAttribute attribute = object.getAttributes()[i];
+                if (attribute.getValue() != null && !attribute.getValue().equals(attribute.getDefaultValue()) && !attribute.getValue().equals("")){
+                    clipboard.append(attribute.getName()).append("=").append(attribute.getValue());
+                    clipboard.append(";");
+                }
             }
+
+            clipboard.deleteCharAt(clipboard.length() - 1);
+            clipboard.append(">");
         }
 
-        clipboard.deleteCharAt(clipboard.length() - 1);
-
-        clipboard.append(">");
-
         return clipboard.toString();
-
     }
-
-
 }

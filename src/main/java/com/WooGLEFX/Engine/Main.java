@@ -11,8 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.imageio.ImageIO;
@@ -149,7 +151,7 @@ public class Main extends Application {
 
     private static Pane thingPane;
 
-    private static boolean SHIFT;
+    public static boolean SHIFT;
     private static boolean CTRL;
 
     private static double mouseStartX;
@@ -977,15 +979,19 @@ public class Main extends Application {
         if (propertiesView.getEditingCell() == null) {
             String clipboard = Clipboard.getSystemClipboard().getString();
             if (clipboard != null) {
-                EditorObject object = ClipboardHandler.importFromClipboardString(clipboard);
-                if (object != null) {
+                List<EditorObject> objects = ClipboardHandler.importFromClipboardString(clipboard);
+                for (EditorObject object : objects) {
                     object.setLevel(level);
+                    EditorObject firstSelectedParent = null;
+                    if (!level.getSelected().isEmpty()) {
+                        firstSelectedParent = level.getSelected().get(0).getParent();
+                    }
 
-                    boolean okayToBeChild = level.getSelected() != null && level.getSelected().getParent() != null;
+                    boolean okayToBeChild = level.getSelected() != null && firstSelectedParent != null;
 
                     if (okayToBeChild) {
                         okayToBeChild = false;
-                        for (String possibleChild : level.getSelected().getParent().getPossibleChildren()) {
+                        for (String possibleChild : firstSelectedParent.getPossibleChildren()) {
                             if (possibleChild.equals(object.getRealName())) {
                                 okayToBeChild = true;
                                 break;
@@ -994,7 +1000,7 @@ public class Main extends Application {
                     }
 
                     if (okayToBeChild) {
-                        object.setParent(level.getSelected().getParent());
+                        object.setParent(firstSelectedParent);
                     } else {
                         if (object.getClass().getPackage().getName().equals("com.WorldOfGoo.Scene")) {
                             object.setParent(level.getSceneObject());
@@ -1008,13 +1014,14 @@ public class Main extends Application {
                         fixGooball(object);
                     }
                     // object.getParent().getChildren().add(0, object);
+                    // XXX: Combine to one object creation action
                     create(object, 0);
-                    setSelected(object);
                     registerChange(new ObjectCreationAction(object, hierarchy.getRow(object.getTreeItem())
-                            - hierarchy.getRow(object.getParent().getTreeItem()) - 1));
+                    - hierarchy.getRow(object.getParent().getTreeItem()) - 1));
                     level.redoActions.clear();
-                    hierarchy.refresh();
                 }
+                setSelected(objects);
+                hierarchy.refresh();
             }
         }
     }
@@ -1067,20 +1074,21 @@ public class Main extends Application {
     }
 
     public static void delete() {
-        if (level.getSelected() != null) {
-            EditorObject parent = level.getSelected().getParent();
-            int row = parent.getChildren().indexOf(level.getSelected());
-            registerChange(new ObjectDestructionAction(level.getSelected(), row));
+        // XXX: Combine to one object destruction action
+        changeTableView(level.getSelected());
+        for (EditorObject selected : level.getSelected()) {
+            EditorObject parent = selected.getParent();
+            int row = parent.getChildren().indexOf(selected);
+            registerChange(new ObjectDestructionAction(selected, row));
             level.redoActions.clear();
-            deleteItem(level.getSelected(), false);
+            deleteItem(selected, false);
             if (row == 0) {
-                setSelected(parent);
+                selectSingle(parent);
             } else {
-                setSelected(parent.getChildren().get(row - 1));
+                selectSingle(parent.getChildren().get(row - 1));
             }
-            changeTableView(level.getSelected());
             // hierarchy.getFocusModel().focus(row);
-            hierarchy.getSelectionModel().select(hierarchy.getRow(level.getSelected().getTreeItem()));
+            hierarchy.getSelectionModel().select(hierarchy.getRow(selected.getTreeItem()));
             hierarchy.refresh();
         }
     }
@@ -1271,7 +1279,7 @@ public class Main extends Application {
         EditorObject newTextObject = EditorObject.create("string", new EditorAttribute[0], level.getTextObject());
         fixString(newTextObject);
         level.getText().add(newTextObject);
-        setSelected(newTextObject);
+        selectSingle(newTextObject);
         registerChange(
                 new ObjectCreationAction(newTextObject, level.getTextObject().getChildren().indexOf(newTextObject)));
         level.redoActions.clear();
@@ -1595,7 +1603,7 @@ public class Main extends Application {
         hierarchy.getSelectionModel().select(hierarchy.getRow(obj.getTreeItem()));
         obj.setLevel(level);
         obj.update();
-        setSelected(obj);
+        selectSingle(obj);
         changeTableView(level.getSelected());
 
         registerChange(new ObjectCreationAction(obj,
@@ -2056,13 +2064,26 @@ public class Main extends Application {
         }
     }
 
-    public static EditorObject getSelected() {
+    public static List<EditorObject> getSelected() {
         return level.getSelected();
     }
 
-    public static void setSelected(EditorObject _selected) {
+    public static void setSelected(List<EditorObject> _selected) {
         level.setSelected(_selected);
-        goToSelectedInHierarchy();
+        if (!_selected.isEmpty()) {
+            goToSelectedInHierarchy(_selected.get(_selected.size() - 1));
+        }
+    }
+
+    public static void selectSingle(EditorObject obj) {
+        List<EditorObject> selList = new ArrayList<>();
+        selList.add(obj);
+        setSelected(selList);
+    }
+
+    public static void addSelected(EditorObject obj) {
+        level.addSelected(obj);
+        goToSelectedInHierarchy(obj);
     }
 
     public static EditorObject getMoving() {
@@ -2092,8 +2113,8 @@ public class Main extends Application {
         return mouseY;
     }
 
-    private static EditorAttribute[] oldAttributes;
-    private static EditorObject oldSelected;
+    private static Map<EditorObject, EditorAttribute[]> oldAttributes;
+    private static List<EditorObject> oldSelected;
 
     /**
      * Called whenever the mouse is pressed.
@@ -2106,27 +2127,30 @@ public class Main extends Application {
 
             if (event.getButton().equals(MouseButton.PRIMARY)) {
 
-                if (level.getSelected() != null) {
+                if (!level.getSelected().isEmpty() && !SHIFT) {
                     if (propertiesView.getEditingCell() == null
                             || propertiesView.getFocusModel().focusedIndexProperty().get() == -1) {
                         propertiesView.edit(-1, null);
                     }
-                    oldAttributes = level.getSelected().cloneAttributes();
+                    oldAttributes = new HashMap<>();
+                    for (EditorObject obj : level.getSelected()) {
+                        oldAttributes.put(obj, obj.cloneAttributes());
+                    }
                     oldSelected = level.getSelected();
                 }
 
                 if (mode == SELECTION) {
                     if (event.getX() < editorViewWidth && event.getY() > getMouseYOffset()) {
-                        if (level.getSelected() != null) {
-                            dragSettings = level.getSelected().mouseIntersectingCorners(
+                        for (EditorObject obj : level.getSelected()) {
+                            dragSettings = obj.mouseIntersectingCorners(
                                     (event.getX() - level.getOffsetX()) / level.getZoom(),
                                     (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
 
                             /* Dragging of already selected object that might be behind something else */
-                            DragSettings thisSettings = level.getSelected().mouseIntersection(
+                            DragSettings thisSettings = obj.mouseIntersection(
                                     (event.getX() - level.getOffsetX()) / level.getZoom(),
                                     (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
-                            DragSettings thisImageSettings = level.getSelected().mouseImageIntersection(
+                            DragSettings thisImageSettings = obj.mouseImageIntersection(
                                     (event.getX() - level.getOffsetX()) / level.getZoom(),
                                     (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
                             if (thisSettings.getType() != DragSettings.NONE) {
@@ -2140,16 +2164,25 @@ public class Main extends Application {
                         }
                         if (dragSettings.getType() == DragSettings.NONE) {
 
-                            EditorObject prevSelected = level.getSelected();
-                            setSelected(null);
+                            List<EditorObject> prevSelected = level.getSelected();
+                            if (!SHIFT) {
+                                setSelected(new ArrayList<EditorObject>());
+                            }
                             ArrayList<EditorObject> byDepth = Renderer.orderObjectsBySelectionDepth(level);
                             for (int i = byDepth.size() - 1; i >= 0; i--) {
                                 EditorObject object = byDepth.get(i);
                                 if (object.mouseIntersection((event.getX() - level.getOffsetX()) / level.getZoom(),
                                         (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom())
                                         .getType() != DragSettings.NONE) {
-                                    changeTableView(object);
-                                    setSelected(object);
+
+                                    List<EditorObject> selList = new ArrayList<>();
+                                    selList.add(object);
+                                    changeTableView(selList);
+                                    if (!SHIFT) {
+                                        setSelected(selList);
+                                    } else {
+                                        addSelected(object);
+                                    }
                                     object.getParent().getTreeItem().setExpanded(true);
                                     hierarchy.getSelectionModel().select(object.getTreeItem());
                                     // Scroll to this position in the selection model
@@ -2162,26 +2195,34 @@ public class Main extends Application {
                                         (event.getX() - level.getOffsetX()) / level.getZoom(),
                                         (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom())
                                         .getType() != DragSettings.NONE) {
-                                    changeTableView(object);
-                                    setSelected(object);
+                                    List<EditorObject> selList = new ArrayList<>();
+                                    selList.add(object);
+                                    changeTableView(selList);
+                                    if (!SHIFT) {
+                                        setSelected(selList);
+                                    } else {
+                                        addSelected(object);
+                                    }
                                     object.getParent().getTreeItem().setExpanded(true);
                                     hierarchy.getSelectionModel().select(object.getTreeItem());
                                     break;
                                 }
                             }
                             if (level.getSelected() != null && level.getSelected() == prevSelected) {
-                                DragSettings thisSettings = level.getSelected().mouseIntersection(
-                                        (event.getX() - level.getOffsetX()) / level.getZoom(),
-                                        (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
-                                DragSettings thisImageSettings = level.getSelected().mouseImageIntersection(
-                                        (event.getX() - level.getOffsetX()) / level.getZoom(),
-                                        (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
-                                if (thisSettings.getType() != DragSettings.NONE) {
-                                    scene.setCursor(Cursor.MOVE);
-                                    dragSettings = thisSettings;
-                                } else if (thisImageSettings.getType() != DragSettings.NONE) {
-                                    scene.setCursor(Cursor.MOVE);
-                                    dragSettings = thisImageSettings;
+                                for (EditorObject obj : level.getSelected()) {
+                                    DragSettings thisSettings = obj.mouseIntersection(
+                                            (event.getX() - level.getOffsetX()) / level.getZoom(),
+                                            (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
+                                    DragSettings thisImageSettings = obj.mouseImageIntersection(
+                                            (event.getX() - level.getOffsetX()) / level.getZoom(),
+                                            (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
+                                    if (thisSettings.getType() != DragSettings.NONE) {
+                                        scene.setCursor(Cursor.MOVE);
+                                        dragSettings = thisSettings;
+                                    } else if (thisImageSettings.getType() != DragSettings.NONE) {
+                                        scene.setCursor(Cursor.MOVE);
+                                        dragSettings = thisImageSettings;
+                                    }
                                 }
                             }
                         }
@@ -2225,15 +2266,31 @@ public class Main extends Application {
             // Update the selected object according to what kind of operation is being
             // performed.
             switch (dragSettings.getType()) {
-                case DragSettings.MOVE -> level.getSelected().dragFromMouse(gameRelativeMouseX, gameRelativeMouseY,
-                        dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY());
-                case DragSettings.RESIZE -> level.getSelected().resizeFromMouse(gameRelativeMouseX, gameRelativeMouseY,
+                case DragSettings.MOVE -> {
+                    for (EditorObject obj : level.getSelected()) {
+                        obj.dragFromMouse(gameRelativeMouseX, gameRelativeMouseY,
+                            dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY());
+                    }
+                }
+                case DragSettings.RESIZE -> {
+                    for (EditorObject obj : level.getSelected()) {
+                        obj.resizeFromMouse(gameRelativeMouseX, gameRelativeMouseY,
                         dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY(), dragSettings.getAnchorX(),
                         dragSettings.getAnchorY());
-                case DragSettings.ROTATE -> level.getSelected().rotateFromMouse(gameRelativeMouseX, gameRelativeMouseY,
+                    }
+                }
+                case DragSettings.ROTATE -> {
+                    for (EditorObject obj : level.getSelected()) {
+                        obj.rotateFromMouse(gameRelativeMouseX, gameRelativeMouseY,
                         dragSettings.getRotateAngleOffset());
-                case DragSettings.SETANCHOR -> level.getSelected().setAnchor(gameRelativeMouseX, gameRelativeMouseY,
+                    }
+                }
+                case DragSettings.SETANCHOR -> {
+                    for (EditorObject obj : level.getSelected()) {
+                        obj.setAnchor(gameRelativeMouseX, gameRelativeMouseY,
                         dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY());
+                    }
+                }
             }
 
             propertiesView.refresh();
@@ -2263,8 +2320,8 @@ public class Main extends Application {
         if (level != null) {
             mouseX = event.getX();
             mouseY = event.getY() - getMouseYOffset();
-            if (level.getSelected() != null) {
-                DragSettings hit = level.getSelected().mouseIntersectingCorners(
+            for (EditorObject obj : level.getSelected()) {
+                DragSettings hit = obj.mouseIntersectingCorners(
                         (event.getX() - level.getOffsetX()) / level.getZoom(),
                         (event.getY() - getMouseYOffset() - level.getOffsetY()) / level.getZoom());
                 switch (hit.getType()) {
@@ -2292,10 +2349,12 @@ public class Main extends Application {
             // Record the changes made to the selected object.
             // Clear all possible redos if changes have been made.
             if (level.getSelected() != null && level.getSelected() == oldSelected && oldAttributes != null) {
-                UserAction[] changes = level.getSelected().getUserActions(oldAttributes);
-                if (changes.length > 0) {
-                    registerChange(changes);
-                    level.redoActions.clear();
+                for (EditorObject obj : level.getSelected()) {
+                    UserAction[] changes = obj.getUserActions(oldAttributes.get(obj));
+                    if (changes.length > 0) {
+                        registerChange(changes);
+                        level.redoActions.clear();
+                    }
                 }
             }
 
@@ -2372,8 +2431,8 @@ public class Main extends Application {
                 level.setOffsetY(newTranslateY);
                 level.setZoom(newScaleX);
 
-                if (level.getSelected() != null) {
-                    DragSettings hit = level.getSelected().mouseIntersectingCorners(mouseX, mouseY);
+                for (EditorObject obj : level.getSelected()) {
+                    DragSettings hit = obj.mouseIntersectingCorners(mouseX, mouseY);
                     switch (hit.getType()) {
                         case DragSettings.NONE -> scene.setCursor(Cursor.DEFAULT);
                         case DragSettings.RESIZE -> scene.setCursor(Cursor.NE_RESIZE);
@@ -2387,12 +2446,12 @@ public class Main extends Application {
                     // Update the selected object according to what kind of operation is being
                     // performed.
                     switch (dragSettings.getType()) {
-                        case DragSettings.MOVE -> level.getSelected().dragFromMouse(gameRelativeMouseX,
+                        case DragSettings.MOVE -> obj.dragFromMouse(gameRelativeMouseX,
                                 gameRelativeMouseY, dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY());
-                        case DragSettings.RESIZE -> level.getSelected().resizeFromMouse(gameRelativeMouseX,
+                        case DragSettings.RESIZE -> obj.resizeFromMouse(gameRelativeMouseX,
                                 gameRelativeMouseY, dragSettings.getInitialSourceX(), dragSettings.getInitialSourceY(),
                                 dragSettings.getAnchorX(), dragSettings.getAnchorY());
-                        case DragSettings.ROTATE -> level.getSelected().rotateFromMouse(gameRelativeMouseX,
+                        case DragSettings.ROTATE -> obj.rotateFromMouse(gameRelativeMouseX,
                                 gameRelativeMouseY, dragSettings.getRotateAngleOffset());
                     }
 
@@ -2500,20 +2559,22 @@ public class Main extends Application {
             FXCreator.buttonShowHideSceneBGColor.setGraphic(new ImageView(
                     level.isShowSceneBGColor() ? WorldLevel.showHideSceneBGColor1 : WorldLevel.showHideSceneBGColor0));
             changeTableView(level.getSelected());
-            goToSelectedInHierarchy();
+            if (!level.getSelected().isEmpty()) {
+                goToSelectedInHierarchy(level.getSelected().get(level.getSelected().size() - 1));
+            }
         }
     }
 
-    public static void goToSelectedInHierarchy() {
-        if (level.getSelected() != null && level.getSelected().getParent() != null) {
-            if (level.getSelected().getAbsoluteParent() instanceof ResourceManifest) {
-                hierarchy.setRoot(level.getSelected().getAbsoluteParent().getChildren().get(0).getTreeItem());
+    public static void goToSelectedInHierarchy(EditorObject obj) {
+        if (level.getSelected() != null && obj.getParent() != null) {
+            if (obj.getAbsoluteParent() instanceof ResourceManifest) {
+                hierarchy.setRoot(obj.getAbsoluteParent().getChildren().get(0).getTreeItem());
                 hierarchy.setShowRoot(true);
-            } else if (level.getSelected().getAbsoluteParent() instanceof TextStrings) {
-                hierarchy.setRoot(level.getSelected().getAbsoluteParent().getTreeItem());
+            } else if (obj.getAbsoluteParent() instanceof TextStrings) {
+                hierarchy.setRoot(obj.getAbsoluteParent().getTreeItem());
                 hierarchy.setShowRoot(true);
             } else {
-                hierarchy.setRoot(level.getSelected().getAbsoluteParent().getTreeItem());
+                hierarchy.setRoot(obj.getAbsoluteParent().getTreeItem());
                 hierarchy.setShowRoot(true);
             }
 
@@ -2529,6 +2590,15 @@ public class Main extends Application {
 
     public static TabPane getLevelSelectPane() {
         return levelSelectPane;
+    }
+
+    public static void changeTableView(List<EditorObject> objs) {
+        if (objs.isEmpty()) {
+            propertiesView.setRoot(null);
+        } else {
+            EditorObject lastObject = objs.get(objs.size() - 1);
+            propertiesView.setRoot(lastObject.getPropertiesTreeItem());
+        }
     }
 
     public static void changeTableView(EditorObject obj) {
