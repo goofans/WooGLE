@@ -124,7 +124,7 @@ public class Circle extends EditorObject {
             graphicsContext.setLineWidth(Main.getLevel().getZoom());
             graphicsContext.strokeOval(screenX + Main.getLevel().getZoom() / 2, screenY + Main.getLevel().getZoom() / 2, (radius - 0.5) * 2 * Main.getLevel().getZoom(), (radius - 0.5) * 2 * Main.getLevel().getZoom());
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 graphicsContext.setStroke(Renderer.selectionOutline2);
                 graphicsContext.setLineWidth(1);
                 graphicsContext.setLineDashes(3);

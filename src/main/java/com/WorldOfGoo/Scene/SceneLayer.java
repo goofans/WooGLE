@@ -247,7 +247,7 @@ public class SceneLayer extends EditorObject {
 
             imageGraphicsContext.restore();
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
 
                 Point2D rotated2 = EditorObject.rotate(new Point2D(x2 - image.getWidth() * scalex / 2, -y2 - image.getHeight() * scaley / 2), -Math.toRadians(rotation2), new Point2D(x2, -y2));
                 Point2D rotated3 = EditorObject.rotate(new Point2D(x2 + image.getWidth() * scalex / 2, -y2 + image.getHeight() * scaley / 2), -Math.toRadians(rotation2), new Point2D(x2, -y2));

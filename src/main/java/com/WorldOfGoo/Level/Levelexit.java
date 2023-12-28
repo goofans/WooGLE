@@ -39,7 +39,7 @@ public class Levelexit extends EditorObject {
             graphicsContext.setLineWidth(Main.getLevel().getZoom() * 3);
             graphicsContext.strokeOval(screenX + Main.getLevel().getZoom() * 3 / 2, screenY + Main.getLevel().getZoom() * 3 / 2, (radius - 1.5) * 2 * Main.getLevel().getZoom(), (radius - 1.5) * 2 * Main.getLevel().getZoom());
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 graphicsContext.setStroke(Renderer.selectionOutline);
                 graphicsContext.setLineWidth(1);
                 graphicsContext.setLineDashes(3);

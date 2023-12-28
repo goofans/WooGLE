@@ -82,7 +82,7 @@ public class Slider extends EditorObject {
 
                 graphicsContext.strokeRect(screenX - size / 2, screenY - size / 2, size, size);
 
-                if (this == Main.getSelected()) {
+                if (Main.getSelected().contains(this)) {
 
                     graphicsContext.setStroke(Renderer.selectionOutline2);
                     graphicsContext.setLineWidth(1);
@@ -127,7 +127,7 @@ public class Slider extends EditorObject {
 
 
 
-                if (this == Main.getSelected()) {
+                if (Main.getSelected().contains(this)) {
 
                     graphicsContext.setStroke(Renderer.selectionOutline2);
                     graphicsContext.setLineWidth(1);

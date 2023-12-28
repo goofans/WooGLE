@@ -89,7 +89,7 @@ public class Line extends EditorObject {
                     screenX - realDir.getX() * Main.getLevel().getZoom() * 4 + dst * realDir.getX(),
                     screenY - realDir.getY() * Main.getLevel().getZoom() * 4 + dst * realDir.getY());
             graphicsContext.strokeLine(screenX, screenY, screenX + dst2 * dir.getX(), screenY + dst2 * dir.getY());
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 double screenX2 = screenX + (dst2 + 2 * Main.getLevel().getZoom()) * dir.getX();
                 double screenY2 = screenY + (dst2 + 2 * Main.getLevel().getZoom()) * dir.getY();
 

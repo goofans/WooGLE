@@ -178,7 +178,7 @@ public class Rectangle extends EditorObject {
             graphicsContext.strokeLine(topLeft.getX(), topLeft.getY(), bottomLeft.getX(), bottomLeft.getY());
             graphicsContext.strokeLine(bottomRight.getX(), bottomRight.getY(), topRight.getX(), topRight.getY());
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 graphicsContext.setStroke(Renderer.selectionOutline2);
                 graphicsContext.setLineWidth(1);
                 graphicsContext.setLineDashes(3);

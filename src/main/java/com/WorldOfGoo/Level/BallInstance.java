@@ -244,7 +244,7 @@ public class BallInstance extends EditorObject {
                         }
                     }
                 }
-                if (this == Main.getSelected()) {
+                if (Main.getSelected().contains(this)) {
                     double x3 = Double.parseDouble(getAttribute("x"));
                     double y3 = Double.parseDouble(getAttribute("y"));
 
@@ -288,7 +288,7 @@ public class BallInstance extends EditorObject {
 
                     graphicsContext.strokeOval(screenX * Main.getLevel().getZoom() + Main.getLevel().getOffsetX(), screenY * Main.getLevel().getZoom() + Main.getLevel().getOffsetY(), width * Main.getLevel().getZoom(), height * Main.getLevel().getZoom());
 
-                    if (this == Main.getSelected()) {
+                    if (Main.getSelected().contains(this)) {
                         double x3 = Double.parseDouble(getAttribute("x"));
                         double y3 = Double.parseDouble(getAttribute("y"));
 
@@ -366,7 +366,7 @@ public class BallInstance extends EditorObject {
                     graphicsContext.strokeLine(topLeft.getX(), topLeft.getY(), bottomLeft.getX(), bottomLeft.getY());
                     graphicsContext.strokeLine(bottomRight.getX(), bottomRight.getY(), topRight.getX(), topRight.getY());
 
-                    if (this == Main.getSelected()) {
+                    if (Main.getSelected().contains(this)) {
                         graphicsContext.setStroke(Renderer.selectionOutline2);
                         graphicsContext.setLineWidth(1);
                         graphicsContext.setLineDashes(3);

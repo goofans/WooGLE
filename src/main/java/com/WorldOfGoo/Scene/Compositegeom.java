@@ -77,7 +77,7 @@ public class Compositegeom extends EditorObject {
 
             graphicsContext.strokeOval(screenX - size / 2, screenY - size / 2, size, size);
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 double x2 = Double.parseDouble(getAttribute("x"));
                 double y2 = Double.parseDouble(getAttribute("y"));
 

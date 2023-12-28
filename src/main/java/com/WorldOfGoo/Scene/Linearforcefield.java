@@ -98,7 +98,7 @@ public class Linearforcefield extends EditorObject {
                 graphicsContext.strokeLine(screenX, screenY, screenX + force.getX() * Main.getLevel().getZoom() * forceScale, screenY - force.getY() * Main.getLevel().getZoom() * forceScale);
             }
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 graphicsContext.setStroke(Renderer.selectionOutline);
                 graphicsContext.setLineWidth(1);
                 graphicsContext.setLineDashes(3);

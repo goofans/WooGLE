@@ -108,7 +108,7 @@ public class Signpost extends EditorObject {
 
             imageGraphicsContext.drawImage(image, screenX - imgWidth / 2.0, screenY - imgHeight / 2.0, imgWidth, imgHeight);
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
 
                 Point2D rotated2 = EditorObject.rotate(new Point2D(x2 - image.getWidth() * scalex / 2, -y2 - image.getHeight() * scaley / 2), -Math.toRadians(rotation), new Point2D(x2, -y2));
                 Point2D rotated3 = EditorObject.rotate(new Point2D(x2 + image.getWidth() * scalex / 2, -y2 + image.getHeight() * scaley / 2), -Math.toRadians(rotation), new Point2D(x2, -y2));

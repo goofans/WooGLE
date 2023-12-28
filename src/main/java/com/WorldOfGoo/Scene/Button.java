@@ -157,7 +157,7 @@ public class Button extends EditorObject {
 
             imageGraphicsContext.restore();
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
 
                 Point2D rotated2 = EditorObject.rotate(new Point2D(x - image.getWidth() * scalex / 2, -y - image.getHeight() * scaley / 2), -Math.toRadians(rotation), new Point2D(x, -y));
                 Point2D rotated3 = EditorObject.rotate(new Point2D(x + image.getWidth() * scalex / 2, -y + image.getHeight() * scaley / 2), -Math.toRadians(rotation), new Point2D(x, -y));

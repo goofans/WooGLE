@@ -209,7 +209,7 @@ public class Particles extends EditorObject {
             graphicsContext.setFont(font);
             graphicsContext.fillText(getString("effect"), screenX2 - width / 2, screenY2 - height / 2);
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
 
                 graphicsContext.setStroke(Renderer.selectionOutline2);
                 graphicsContext.setLineWidth(1);

@@ -58,7 +58,7 @@ public class Poi extends EditorObject {
                 graphicsContext.strokeRect(x * Main.getLevel().getZoom() + Main.getLevel().getOffsetX(), y * Main.getLevel().getZoom() + Main.getLevel().getOffsetY(), width * Main.getLevel().getZoom(), height * Main.getLevel().getZoom());
             }
 
-            if (this == Main.getSelected()) {
+            if (Main.getSelected().contains(this)) {
                 graphicsContext.setStroke(Renderer.selectionOutline2);
                 graphicsContext.setLineWidth(1);
                 graphicsContext.setLineDashes(3);
