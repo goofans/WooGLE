@@ -2257,7 +2257,7 @@ public class Main extends Application {
     public static void eventMouseDragged(MouseEvent event) {
         mouseX = event.getX();
         mouseY = event.getY() - getMouseYOffset();
-        if (level != null && level.getSelected() != null && dragSettings != null) {
+        if (level != null && !level.getSelected().isEmpty() && dragSettings != null) {
 
             // Calculate game-relative mouse coordinates.
             double gameRelativeMouseX = (mouseX - level.getOffsetX()) / level.getZoom();
